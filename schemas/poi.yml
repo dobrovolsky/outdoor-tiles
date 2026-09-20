@@ -1,0 +1,292 @@
+schema_name: POI
+schema_description: Points of interest
+version: 1
+is_overlay: true
+
+args:
+    minzoom: 7
+    maxzoom: 14
+    tile_warning_size_mb: 1
+
+sources:
+    osm:
+        type: osm
+        url: https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
+        # Fallback for direct Planetiler runs. scripts/generate.py overrides
+        # this with --osm-path for the configured country/world scope.
+        local_path: sources/planet-latest.osm.pbf
+
+definitions:
+    poi: &poi
+        source: osm
+        geometry: centroid
+        attributes:
+            - key: id
+              value: '${ feature.id }'
+              type: long
+            - key: type
+              value: '${ feature.osm_type }'
+            - key: name
+              tag_value: name
+            - key: shop
+              tag_value: shop
+            - key: amenity
+              tag_value: amenity
+            - key: barrier
+              tag_value: barrier
+            - key: ford
+              tag_value: ford
+            - key: tourism
+              tag_value: tourism
+            - key: natural
+              tag_value: natural
+            - key: landuse
+              tag_value: landuse
+            - key: historic
+              tag_value: historic
+            - key: man_made
+              tag_value: man_made
+            - key: power
+              tag_value: power
+            - key: 'generator:source'
+              tag_value: 'generator:source'
+            - key: 'plant:source'
+              tag_value: 'plant:source'
+            - key: waterway
+              tag_value: waterway
+            - key: height
+              tag_value: height
+            - key: leisure
+              tag_value: leisure
+            - key: drinking_water
+              tag_value: drinking_water
+            - key: website
+              tag_value: website
+            - key: wikipedia
+              tag_value: wikipedia
+            - key: phone
+              tag_value: phone
+            - key: 'contact:phone'
+              tag_value: 'contact:phone'
+            - key: email
+              tag_value: email
+            - key: 'contact:email'
+              tag_value: 'contact:email'
+            - key: opening_hours
+              tag_value: opening_hours
+            - key: image
+              tag_value: image
+            - key: 'image:0'
+              tag_value: 'image:0'
+
+layers:
+    - id: food-store
+      features:
+          - <<: *poi
+            include_when:
+                shop: [supermarket, convenience]
+    - id: water
+      features:
+          - <<: *poi
+            include_when:
+                amenity: [drinking_water, water_point]
+          - <<: *poi
+            include_when:
+                __all__:
+                    - natural: spring
+                    - drinking_water: 'yes'
+    - id: ford
+      features:
+          - <<: *poi
+            include_when: { ford: __any__ }
+    - id: cemetery
+      features:
+          - <<: *poi
+            include_when:
+                landuse: cemetery
+          - <<: *poi
+            include_when:
+                amenity: grave_yard
+    - id: barrier
+      features:
+          - <<: *poi
+            include_when:
+                barrier:
+                    [
+                        bar,
+                        barrier_board,
+                        block,
+                        chain,
+                        cycle_barrier,
+                        gate,
+                        hampshire_gate,
+                        horse_stile,
+                        kissing_gate,
+                        lift_gate,
+                        motorcycle_barrier,
+                        sliding_beam,
+                        sliding_gate,
+                        stile,
+                        swing_gate,
+                        turnstile,
+                        wicket_gate,
+                    ]
+    - id: viewpoint
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - tourism: viewpoint
+                    - name: __any__
+    - id: attraction
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - tourism: attraction
+                    - name: __any__
+    - id: waterfall
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - waterway: waterfall
+                    - name: __any__
+    - id: hot_spring
+      features:
+          - <<: *poi
+            include_when: { natural: hot_spring }
+    - id: castle
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - historic: castle
+                    - name: __any__
+    - id: ruins
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - historic: ruins
+                    - name: __any__
+    - id: memorial
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - historic: memorial
+                    - name: __any__
+    - id: monument
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - historic: monument
+                    - name: __any__
+    - id: archaeological_site
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - historic: archaeological_site
+                    - name: __any__
+    - id: fort
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - historic: fort
+                    - name: __any__
+    - id: windmill
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - man_made: windmill
+                    - name: __any__
+    - id: wind_turbine
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - power: generator
+                    - 'generator:source': wind
+                    - name: __any__
+    - id: watermill
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - man_made: watermill
+                    - name: __any__
+    - id: water_tower
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - man_made: water_tower
+                    - name: __any__
+    - id: hydropower
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - power: plant
+                    - 'plant:source': hydro
+                    - name: __any__
+    - id: dam
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - waterway: dam
+                    - name: __any__
+    - id: nature_reserve
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - leisure: nature_reserve
+                    - name: __any__
+    - id: park
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - leisure: park
+                    - name: __any__
+    - id: cliff
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - natural: cliff
+                    - name: __any__
+    - id: peak
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - natural: peak
+                    - name: __any__
+    - id: cave_entrance
+      features:
+          - <<: *poi
+            include_when:
+                __all__:
+                    - natural: cave_entrance
+                    - name: __any__
+    - id: bird_hide
+      features:
+          - <<: *poi
+            include_when: { leisure: bird_hide }
+    - id: campsite
+      features:
+          - <<: *poi
+            include_when:
+                tourism: [camp_site, alpine_hut, wilderness_hut]
+    - id: picnic
+      features:
+          - <<: *poi
+            include_when: { tourism: picnic_site }

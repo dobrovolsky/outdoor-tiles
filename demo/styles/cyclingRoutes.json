@@ -1,0 +1,110 @@
+{
+    "version": 8,
+    "sources": {
+        "routes": {
+            "type": "vector",
+            "url": "/tiles/routes",
+            "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap contributors</a>"
+        }
+    },
+    "layers": [
+        {
+            "id": "cyclingRoutesHighlight",
+            "type": "line",
+            "source": "routes",
+            "source-layer": "routes",
+            "minzoom": 6,
+            "filter": [
+                "all",
+                ["==", ["get", "class"], "bicycle"],
+                ["==", ["get", "relation_id"], -1]
+            ],
+            "layout": { "line-join": "round", "line-cap": "round" },
+            "paint": {
+                "line-color": "rgba(255, 255, 255, 0.95)",
+                "line-blur": 1,
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    6,
+                    5,
+                    12,
+                    6,
+                    13,
+                    7,
+                    15,
+                    7.5
+                ]
+            }
+        },
+        {
+            "id": "cyclingRoutesColored",
+            "type": "line",
+            "source": "routes",
+            "source-layer": "routes",
+            "minzoom": 6,
+            "filter": ["==", ["get", "class"], "bicycle"],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": [
+                    "match",
+                    ["get", "color"],
+                    "yellow",
+                    "#ffd900",
+                    "green",
+                    "#4b9e2a",
+                    "red",
+                    "#ed341c",
+                    "brown",
+                    "#8b5a3c",
+                    "black",
+                    "#2e2e2e",
+                    "purple",
+                    "#a852cc",
+                    "orange",
+                    "#fa9200",
+                    "#2874d8"
+                ],
+                "line-dasharray": [2.5, 1],
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    6,
+                    1,
+                    12,
+                    2,
+                    13,
+                    3,
+                    15,
+                    3.5
+                ]
+            }
+        },
+        {
+            "id": "cyclingRoutesLabels",
+            "type": "symbol",
+            "source": "routes",
+            "source-layer": "routes",
+            "minzoom": 11,
+            "filter": [
+                "all",
+                ["==", ["get", "class"], "bicycle"],
+                ["any", ["has", "ref"], ["has", "name"]]
+            ],
+            "layout": {
+                "symbol-placement": "line",
+                "symbol-spacing": 350,
+                "text-field": ["coalesce", ["get", "ref"], ["get", "name"]],
+                "text-font": ["Noto Sans Bold"],
+                "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 16, 13]
+            },
+            "paint": {
+                "text-color": "#1e59a8",
+                "text-halo-color": "rgba(255, 255, 255, 0.9)",
+                "text-halo-width": 2
+            }
+        }
+    ]
+}

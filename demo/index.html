@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Tiles demo — Andorra</title>
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/maplibre-gl@6.6.0/dist/maplibre-gl.css"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/maplibre-gl-swipe@0.11.3/dist/maplibre-gl-swipe.css"
+        />
+        <link rel="stylesheet" href="/demo.css" />
+    </head>
+    <body>
+        <div id="map"></div>
+        <div id="controls">
+            <div class="overlay-controls">
+                <span></span>
+                <span class="overlay-controls__header">← Liberty Topo</span>
+                <span class="overlay-controls__header">OpenFreeMap →</span>
+
+                <span>Contours</span>
+                <label>
+                    <input
+                        id="contours-left"
+                        type="checkbox"
+                        checked
+                        aria-label="Contours on Liberty Topo"
+                    />
+                </label>
+                <label>
+                    <input
+                        id="contours-right"
+                        type="checkbox"
+                        checked
+                        aria-label="Contours on OpenFreeMap"
+                    />
+                </label>
+
+                <span>Routes</span>
+                <label>
+                    <input
+                        id="routes-left"
+                        type="checkbox"
+                        checked
+                        aria-label="Routes on Liberty Topo"
+                    />
+                </label>
+                <label>
+                    <input
+                        id="routes-right"
+                        type="checkbox"
+                        checked
+                        aria-label="Routes on OpenFreeMap"
+                    />
+                </label>
+
+                <span>POI</span>
+                <label>
+                    <input
+                        id="poi-left"
+                        type="checkbox"
+                        aria-label="POI on Liberty Topo"
+                    />
+                </label>
+                <label>
+                    <input
+                        id="poi-right"
+                        type="checkbox"
+                        aria-label="POI on OpenFreeMap"
+                    />
+                </label>
+            </div>
+        </div>
+        <div id="status"></div>
+
+        <script src="https://cdn.jsdelivr.net/npm/maplibre-contour@0.1.0/dist/index.min.js"></script>
+        <script type="importmap">
+            {
+                "imports": {
+                    "maplibre-gl": "https://cdn.jsdelivr.net/npm/maplibre-gl@6.6.0/dist/maplibre-gl.mjs"
+                }
+            }
+        </script>
+        <script type="module" src="/demo.js"></script>
+    </body>
+</html>

@@ -1,0 +1,110 @@
+html,
+body,
+#map {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    font-family: system-ui, sans-serif;
+}
+
+#controls {
+    position: absolute;
+    z-index: 2;
+    top: 12px;
+    left: 12px;
+    display: grid;
+    gap: 8px;
+    min-width: 220px;
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.overlay-controls {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 8px 16px;
+}
+
+.overlay-controls__header {
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.overlay-controls label {
+    display: flex;
+    justify-content: center;
+}
+
+#status {
+    position: absolute;
+    z-index: 2;
+    bottom: 32px;
+    left: 12px;
+    max-width: min(420px, calc(100% - 48px));
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: white;
+    background: rgba(145, 32, 32, 0.92);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    white-space: pre-wrap;
+}
+
+#status:empty {
+    display: none;
+}
+
+.maplibregl-popup {
+    z-index: 2;
+}
+
+.demo-swipe-control {
+    display: none;
+}
+
+.feature-popup h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+}
+
+.feature-popup__coordinates {
+    margin-bottom: 8px;
+    color: #69766f;
+    font-size: 12px;
+}
+
+.feature-popup__body {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.feature-popup table {
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.feature-popup th,
+.feature-popup td {
+    padding: 2px 8px 2px 0;
+    text-align: left;
+    vertical-align: top;
+}
+
+.feature-popup th {
+    color: #69766f;
+    font-family: ui-monospace, monospace;
+    font-weight: 500;
+}
+
+.route-popup__route + .route-popup__route {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #ddd;
+}

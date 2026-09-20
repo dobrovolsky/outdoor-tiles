@@ -1,0 +1,14 @@
+planetiler-openmaptiles.jar
+planetiler-openmaptiles-paths.jar
+planetiler.jar
+routes-profile.jar
+.planetiler.version
+.planetiler-openmaptiles.version
+tile_weights.tsv.gz
+.m2/
+__pycache__/
+.ruff_cache/
+*.pyc
+output/
+sources/
+tmp/
