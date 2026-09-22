@@ -1,0 +1,17 @@
+[project]
+name = "waymarked-sprite"
+version = "0.1.0"
+requires-python = ">=3.11"
+license = "GPL-3.0-only"
+dependencies = [
+    "pycairo>=1.27.0",
+    "pygobject>=3.50.0",
+    "setuptools>=75,<81",
+    "waymarkedtrails-shields",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+waymarkedtrails-shields = { git = "https://github.com/waymarkedtrails/waymarkedtrails-shields.git", rev = "976ed6679768ea023858d80e9c15b0229370be76" }

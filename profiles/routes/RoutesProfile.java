@@ -1,27 +1,35 @@
 package studio.gpx.tiles.routes;
 
 import com.onthegomap.planetiler.FeatureCollector;
+import com.onthegomap.planetiler.FeatureMerge;
 import com.onthegomap.planetiler.Planetiler;
 import com.onthegomap.planetiler.Profile;
+import com.onthegomap.planetiler.VectorTile;
 import com.onthegomap.planetiler.config.Arguments;
+import com.onthegomap.planetiler.geo.GeometryException;
 import com.onthegomap.planetiler.reader.SourceFeature;
 import com.onthegomap.planetiler.reader.osm.OsmElement;
 import com.onthegomap.planetiler.reader.osm.OsmReader;
 import com.onthegomap.planetiler.reader.osm.OsmRelationInfo;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 /** Standalone vector overlay for OSM hiking, foot and bicycle route relations. */
 public final class RoutesProfile implements Profile {
 
   public static final String SOURCE_NAME = "osm";
   public static final String LAYER_NAME = "routes";
+  public static final String LABEL_LAYER_NAME = "route_labels";
   private static final Set<String> ROUTE_CLASSES = Set.of("hiking", "foot", "bicycle");
+  private static final Set<String> LOW_ZOOM_NETWORKS = Set.of("iwn", "nwn", "icn", "ncn");
   private static final Set<String> COLORS = Set.of(
     "black", "blue", "brown", "green", "orange", "purple", "red", "yellow"
   );
+  private final Set<String> symbols = new ConcurrentSkipListSet<>();
 
   public static void main(String[] args) throws Exception {
     Arguments arguments = Arguments.fromArgsOrConfigFile(args);
@@ -30,12 +38,20 @@ public final class RoutesProfile implements Profile {
       "filtered OSM PBF containing route relations and their referenced ways/nodes",
       Path.of("sources/routes-country.osm.pbf")
     );
+    Path shieldsPath = arguments.file(
+      "shields_path",
+      "output text file containing unique OSMC symbols",
+      Path.of("tmp/shields.txt")
+    );
+    RoutesProfile profile = new RoutesProfile();
 
     Planetiler.create(arguments)
-      .setProfile(new RoutesProfile())
+      .setProfile(profile)
       .addOsmSource(SOURCE_NAME, osmPath)
       .setOutput(Path.of("output/routes.mbtiles"))
       .run();
+    Files.createDirectories(shieldsPath.toAbsolutePath().getParent());
+    Files.write(shieldsPath, profile.symbols);
   }
 
   @Override
@@ -43,6 +59,11 @@ public final class RoutesProfile implements Profile {
     String routeClass = relation.getString("route");
     if (routeClass == null || !ROUTE_CLASSES.contains(routeClass)) {
       return null;
+    }
+
+    String symbol = tag(relation, "osmc:symbol");
+    if (symbol != null && !"no".equals(symbol)) {
+      symbols.add(symbol);
     }
 
     return List.of(new Route(
@@ -68,7 +89,7 @@ public final class RoutesProfile implements Profile {
       tag(relation, "wikipedia"),
       tag(relation, "wikidata"),
       tag(relation, "state"),
-      tag(relation, "osmc:symbol"),
+      symbol,
       tag(relation, "colour"),
       routeColor(relation)
     ));
@@ -118,10 +139,30 @@ public final class RoutesProfile implements Profile {
         .setAttrWithMinzoom("trail_visibility", tag(feature, "trail_visibility"), 10)
         .setAttrWithMinzoom("mtb_scale", tag(feature, "mtb:scale"), 10)
         .setAttrWithMinzoom("smoothness", tag(feature, "smoothness"), 10)
-        .setMinZoom(6)
+        .setMinZoom(route.network() != null && LOW_ZOOM_NETWORKS.contains(route.network()) ? 6 : 10)
         .setMinPixelSize(0)
         .setBufferPixels(4);
+
+      if (route.symbol() != null || route.ref() != null || route.name() != null) {
+        features.line(LABEL_LAYER_NAME)
+          .setId(route.id())
+          .setAttr("relation_id", route.id())
+          .setAttr("class", route.routeClass())
+          .setAttr("name", route.name())
+          .setAttr("ref", route.ref())
+          .setAttr("symbol", route.symbol())
+          .setAttr("color", route.color())
+          .setMinZoom(11)
+          .setMinPixelSize(0)
+          .setBufferPixels(4);
+      }
     }
+  }
+
+  @Override
+  public List<VectorTile.Feature> postProcessLayerFeatures(String layer, int zoom,
+      List<VectorTile.Feature> items) throws GeometryException {
+    return LABEL_LAYER_NAME.equals(layer) ? FeatureMerge.mergeLineStrings(items, 0, 0, 4) : items;
   }
 
   @Override

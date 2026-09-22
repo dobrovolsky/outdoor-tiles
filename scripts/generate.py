@@ -27,6 +27,9 @@ BASEMAP_PROFILE_PATCH = TILES_DIR / "planetiler-openmaptiles.patch"
 BASEMAP_PROFILE_BUILDER = SCRIPTS_DIR / "build_profile.py"
 ROUTES_PROFILE_BUILDER = SCRIPTS_DIR / "build_routes.py"
 ROUTES_PROFILE_SOURCE_DIR = TILES_DIR / "profiles" / "routes"
+SHIELD_SPRITE_GENERATOR = TILES_DIR / "tools" / "waymarked-sprite" / "generate.py"
+SHIELDS_PATH = TMP_DIR / "shields.txt"
+ROUTES_SPRITE_PATH = OUTPUT_DIR / "routes-sprite"
 TARGETS = ("basemap", "poi", "routes")
 
 
@@ -404,11 +407,30 @@ def generate_routes(options: Options, runner: ToolRunner) -> None:
         runner.run_routes(
             f"--osm-path={runner.path(routes_pbf)}",
             f"--output={runner.path(temporary)}",
+            f"--shields-path={runner.path(SHIELDS_PATH)}",
             "--minzoom=6",
             "--nodemap-type=sortedtable",
             "--storage=mmap",
             "--force",
         )
+    sprite_python = os.environ.get("WAYMARKED_SPRITE_PYTHON")
+    if sprite_python:
+        sprite_command = (sprite_python,)
+    else:
+        require("uv")
+        sprite_command = (
+            "uv",
+            "run",
+            "--project",
+            str(SHIELD_SPRITE_GENERATOR.parent),
+            "python",
+        )
+    run(
+        *sprite_command,
+        str(SHIELD_SPRITE_GENERATOR),
+        str(SHIELDS_PATH),
+        str(ROUTES_SPRITE_PATH),
+    )
     temporary.replace(output)
     print(f"Done: {output}")
 

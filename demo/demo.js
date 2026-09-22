@@ -250,7 +250,11 @@ async function main(maplibregl, demSource, SwipeControl) {
         getJson(tileUrl('poi')),
     ]);
 
-    const routeLayers = [...hiking.layers, ...cycling.layers];
+    const routeStyleLayers = [...hiking.layers, ...cycling.layers];
+    const routeLayers = [
+        ...routeStyleLayers.filter((layer) => layer.type !== 'symbol'),
+        ...routeStyleLayers.filter((layer) => layer.type === 'symbol'),
+    ];
     const poiStyleLayers = poiLayers(poi);
     const routeLayerIds = routeLayers.map(({ id }) => id);
     const poiLayerIds = poiStyleLayers.map(({ id }) => id);
@@ -266,6 +270,13 @@ async function main(maplibregl, demSource, SwipeControl) {
 
     function buildStyle() {
         const style = structuredClone(customBasemap);
+        style.sprite = [
+            { id: 'default', url: customBasemap.sprite },
+            {
+                id: 'routes',
+                url: `${location.origin}/static/tiles/routes-sprite`,
+            },
+        ];
         style.sources = { ...custom.sources, ...openfreemap.sources };
         style.layers = [...custom.layers, ...openfreemap.layers];
         style.sources['custom-openmaptiles'].url = tileUrl('openmaptiles');

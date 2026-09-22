@@ -86,17 +86,30 @@
             "id": "cyclingRoutesLabels",
             "type": "symbol",
             "source": "routes",
-            "source-layer": "routes",
+            "source-layer": "route_labels",
             "minzoom": 11,
             "filter": [
                 "all",
                 ["==", ["get", "class"], "bicycle"],
-                ["any", ["has", "ref"], ["has", "name"]]
+                ["any", ["has", "symbol"], ["has", "ref"], ["has", "name"]]
             ],
             "layout": {
                 "symbol-placement": "line",
-                "symbol-spacing": 350,
-                "text-field": ["coalesce", ["get", "ref"], ["get", "name"]],
+                "symbol-spacing": 600,
+                "icon-image": [
+                    "case",
+                    ["all", ["has", "symbol"], ["!=", ["get", "symbol"], "no"]],
+                    ["concat", "routes:", ["get", "symbol"]],
+                    ""
+                ],
+                "icon-padding": 2,
+                "icon-rotation-alignment": "viewport",
+                "text-field": [
+                    "case",
+                    ["all", ["has", "symbol"], ["!=", ["get", "symbol"], "no"]],
+                    "",
+                    ["coalesce", ["get", "ref"], ["get", "name"]]
+                ],
                 "text-font": ["Noto Sans Bold"],
                 "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 16, 13]
             },

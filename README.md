@@ -8,6 +8,11 @@ Builds three OpenStreetMap-based MBTiles:
 - `output/routes.mbtiles` - hiking, foot, and bicycle route relations, similar to [Waymarked Trails](https://waymarkedtrails.org/)
 - `output/poi.mbtiles` - selected outdoor POIs
 
+Route generation also creates sprite:
+
+- `output/routes-sprite.png` and `output/routes-sprite.json`
+- `output/routes-sprite@2x.png` and `output/routes-sprite@2x.json`
+
 ## Highlights
 
 - Adds [maplibre-contour](https://github.com/onthegomap/maplibre-contour)
@@ -31,6 +36,13 @@ Repeat `--country` to combine extracts. To generate one target:
 ```sh
 ./tiles.sh generate routes --country europe/monaco
 ```
+
+## Licenses
+
+The code is MIT-licensed.
+
+`tools/waymarked-sprite` is GPL-3.0 and uses `waymarkedtrails-shields` under
+the same license.
 
 Run `./tiles.sh` to list all commands.
 

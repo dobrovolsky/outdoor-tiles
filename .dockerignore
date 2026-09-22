@@ -2,3 +2,9 @@
 !Dockerfile
 !pyproject.toml
 !uv.lock
+!tools/
+!tools/waymarked-sprite/
+!tools/waymarked-sprite/LICENSE
+!tools/waymarked-sprite/NOTICE
+!tools/waymarked-sprite/pyproject.toml
+!tools/waymarked-sprite/uv.lock

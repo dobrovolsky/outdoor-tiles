@@ -1,0 +1,11 @@
+waymarked-sprite is licensed under GPL-3.0-only.
+
+It uses waymarkedtrails-shields at commit
+976ed6679768ea023858d80e9c15b0229370be76:
+https://github.com/waymarkedtrails/waymarkedtrails-shields/tree/976ed6679768ea023858d80e9c15b0229370be76
+
+OSMC renderer copyright notice:
+Copyright (C) 2011-2025 Sarah Hoffmann.
+
+waymarked-sprite wrapper copyright:
+Copyright (C) 2026 dobrovolsky.

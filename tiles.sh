@@ -92,6 +92,11 @@ case "$command" in
     deploy)
         mkdir -p "$HOME/media/tiles"
         cp output/*.mbtiles "$HOME/media/tiles/"
+        if [ -f output/routes-sprite.json ]; then
+            cp output/routes-sprite.json output/routes-sprite.png \
+                output/routes-sprite@2x.json output/routes-sprite@2x.png \
+                "$HOME/media/tiles/"
+        fi
         ;;
     help|-h|--help) usage ;;
     *)
