@@ -8,7 +8,7 @@ from pathlib import Path
 
 from common import TILES_DIR, require, run
 
-PATCH_FILE = TILES_DIR / "planetiler-openmaptiles.patch"
+PROFILE_SOURCE = TILES_DIR / "profiles" / "openmaptiles" / "Transportation.java"
 OUTPUT_JAR = TILES_DIR / "planetiler-openmaptiles.jar"
 VERSION_FILE = TILES_DIR / ".planetiler-openmaptiles.version"
 MAVEN_CACHE = TILES_DIR / ".m2"
@@ -44,8 +44,10 @@ def main() -> None:
             args.commit,
             cwd=source_dir,
         )
-        run("git", "apply", "--check", str(PATCH_FILE), cwd=source_dir)
-        run("git", "apply", str(PATCH_FILE), cwd=source_dir)
+        shutil.copy2(
+            PROFILE_SOURCE,
+            source_dir / "src/main/java/org/openmaptiles/layers/Transportation.java",
+        )
 
         build_profile(source_dir)
 

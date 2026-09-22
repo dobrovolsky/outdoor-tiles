@@ -23,7 +23,7 @@ BASEMAP_PROFILE_VERSION = TILES_DIR / ".planetiler-openmaptiles.version"
 PLANETILER_JAR = TILES_DIR / "planetiler.jar"
 PLANETILER_VERSION = TILES_DIR / ".planetiler.version"
 ROUTES_PROFILE_JAR = TILES_DIR / "routes-profile.jar"
-BASEMAP_PROFILE_PATCH = TILES_DIR / "planetiler-openmaptiles.patch"
+BASEMAP_PROFILE_SOURCE = TILES_DIR / "profiles" / "openmaptiles" / "Transportation.java"
 BASEMAP_PROFILE_BUILDER = SCRIPTS_DIR / "build_profile.py"
 ROUTES_PROFILE_BUILDER = SCRIPTS_DIR / "build_routes.py"
 ROUTES_PROFILE_SOURCE_DIR = TILES_DIR / "profiles" / "routes"
@@ -31,6 +31,10 @@ SHIELD_SPRITE_GENERATOR = TILES_DIR / "tools" / "waymarked-sprite" / "generate.p
 SHIELDS_PATH = TMP_DIR / "shields.txt"
 ROUTES_SPRITE_PATH = OUTPUT_DIR / "routes-sprite"
 TARGETS = ("basemap", "poi", "routes")
+
+
+def log(message: str) -> None:
+    print(message, flush=True)
 
 
 @dataclass(frozen=True)
@@ -108,11 +112,11 @@ def ensure_planetiler_jar(version: str) -> None:
     bundled_jar = os.environ.get("BUNDLED_PLANETILER_JAR")
     bundled_version = os.environ.get("BUNDLED_PLANETILER_VERSION")
     if bundled_jar and bundled_version == version:
-        print(f"Using bundled Planetiler {version}...")
+        log(f"Using bundled Planetiler {version}...")
         shutil.copy2(bundled_jar, temporary)
     else:
         require("curl")
-        print(f"Downloading Planetiler {version}...")
+        log(f"Downloading Planetiler {version}...")
         run(
             "curl",
             "--fail",
@@ -144,7 +148,7 @@ def ensure_country_sources(options: Options) -> tuple[Path, ...]:
             require("curl")
             temporary = pbf.with_suffix(pbf.suffix + ".tmp")
             temporary.unlink(missing_ok=True)
-            print(f"Downloading {country}...")
+            log(f"Downloading {country}...")
             run(
                 "curl",
                 "--fail",
@@ -155,7 +159,7 @@ def ensure_country_sources(options: Options) -> tuple[Path, ...]:
             )
             temporary.replace(pbf)
         else:
-            print(f"Reusing {pbf}")
+            log(f"Reusing {pbf}")
         pbf_files.append(pbf)
 
     return tuple(pbf_files)
@@ -180,7 +184,7 @@ def merged_sources(
     merged.unlink()
 
     try:
-        print(f"Merging {len(sources)} {label} extracts...")
+        log(f"Merging {len(sources)} {label} extracts...")
         runner.run_osmium(
             "merge",
             "--overwrite",
@@ -196,13 +200,13 @@ def merged_sources(
 def ensure_world_source(options: Options) -> Path:
     planet = SOURCES_DIR / "planet-latest.osm.pbf"
     if planet.is_file():
-        print(f"Reusing {planet}")
+        log(f"Reusing {planet}")
         return planet
 
     require("curl")
     SOURCES_DIR.mkdir(exist_ok=True)
     partial = planet.with_suffix(planet.suffix + ".part")
-    print("Downloading Planet PBF (resume supported)...")
+    log("Downloading Planet PBF (resume supported)...")
     run(
         "curl",
         "--fail",
@@ -259,12 +263,12 @@ def generate_osmium_filters(schema_path: Path) -> str:
 
 def filter_source(kind: str, raw: Path, filtered: Path, runner: ToolRunner) -> Path:
     if filtered.is_file():
-        print(f"Reusing {filtered}")
+        log(f"Reusing {filtered}")
         return filtered
 
     temporary = filtered.with_suffix(filtered.suffix + ".tmp")
     temporary.unlink(missing_ok=True)
-    print(f"Filtering {kind} data from {raw}...")
+    log(f"Filtering {kind} data from {raw}...")
 
     if kind == "routes":
         expression_options = []
@@ -307,9 +311,9 @@ def filtered_source(kind: str, options: Options, runner: ToolRunner) -> Iterator
             yield path
         return
 
-    filtered = SOURCES_DIR / f"{kind}-world.osm.pbf"
+    filtered = SOURCES_DIR / f"planet-{kind}.osm.pbf"
     if filtered.is_file():
-        print(f"Reusing {filtered} (raw Planet PBF is not needed)")
+        log(f"Reusing {filtered} (raw Planet PBF is not needed)")
         yield filtered
         return
 
@@ -322,7 +326,7 @@ def ensure_basemap_profile(repository: str, commit: str) -> None:
         BASEMAP_PROFILE_VERSION.is_file()
         and BASEMAP_PROFILE_VERSION.read_text().strip() == expected_version
     )
-    inputs = (BASEMAP_PROFILE_PATCH, BASEMAP_PROFILE_BUILDER)
+    inputs = (BASEMAP_PROFILE_SOURCE, BASEMAP_PROFILE_BUILDER)
     if (
         not BASEMAP_PROFILE_JAR.is_file()
         or any(newer(path, BASEMAP_PROFILE_JAR) for path in inputs)
@@ -359,7 +363,7 @@ def generate_basemap(options: Options, runner: ToolRunner) -> None:
     )
     temporary.unlink(missing_ok=True)
 
-    print(f"Generating basemap ({options.scope})...")
+    log(f"Generating basemap ({options.scope})...")
     with source(options, runner) as osm_pbf:
         runner.run_basemap(
             f"--osm-path={runner.path(osm_pbf)}",
@@ -373,7 +377,7 @@ def generate_basemap(options: Options, runner: ToolRunner) -> None:
             "--force",
         )
     temporary.replace(output)
-    print(f"Done: {output}")
+    log(f"Done: {output}")
 
 
 def generate_poi(options: Options, runner: ToolRunner) -> None:
@@ -383,7 +387,7 @@ def generate_poi(options: Options, runner: ToolRunner) -> None:
     ensure_planetiler_jar(runner.version)
     temporary.unlink(missing_ok=True)
 
-    print(f"Generating POI tiles ({options.scope})...")
+    log(f"Generating POI tiles ({options.scope})...")
     with filtered_source("poi", options, runner) as poi_pbf:
         runner.run_custom(
             f"--schema={runner.path(TILES_DIR / 'schemas' / 'poi.yml')}",
@@ -392,7 +396,7 @@ def generate_poi(options: Options, runner: ToolRunner) -> None:
             "--force",
         )
     temporary.replace(output)
-    print(f"Done: {output}")
+    log(f"Done: {output}")
 
 
 def generate_routes(options: Options, runner: ToolRunner) -> None:
@@ -402,7 +406,7 @@ def generate_routes(options: Options, runner: ToolRunner) -> None:
     ensure_routes_profile(runner.version)
     temporary.unlink(missing_ok=True)
 
-    print(f"Generating hiking, foot and bicycle routes ({options.scope})...")
+    log(f"Generating hiking, foot and bicycle routes ({options.scope})...")
     with filtered_source("routes", options, runner) as routes_pbf:
         runner.run_routes(
             f"--osm-path={runner.path(routes_pbf)}",
@@ -432,7 +436,7 @@ def generate_routes(options: Options, runner: ToolRunner) -> None:
         str(ROUTES_SPRITE_PATH),
     )
     temporary.replace(output)
-    print(f"Done: {output}")
+    log(f"Done: {output}")
 
 
 def main() -> None:
@@ -485,6 +489,7 @@ def main() -> None:
         "routes": generate_routes,
     }
     for target in targets:
+        log(f"Starting target: {target} ({scopes[target]})")
         options = Options(
             scope=scopes[target],
             countries=tuple(args.country),
@@ -493,6 +498,7 @@ def main() -> None:
             replace=args.replace,
         )
         generators[target](options, runner)
+        log(f"Finished target: {target}")
 
 
 if __name__ == "__main__":

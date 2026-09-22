@@ -1,3 +1,4 @@
+import shlex
 import shutil
 import subprocess
 from pathlib import Path
@@ -16,10 +17,13 @@ def run(
     cwd: Path | None = None,
     capture_output: bool = False,
 ) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    print(f"$ {shlex.join(command)}", flush=True)
+    result = subprocess.run(
         command,
         cwd=cwd,
         check=True,
         text=True,
         capture_output=capture_output,
     )
+    print(f"$ done: {shlex.join(command)}", flush=True)
+    return result

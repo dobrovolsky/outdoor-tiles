@@ -1,85 +1,85 @@
 {
   "blue:blue::E7:yellow": {
-    "width": 58,
+    "width": 60,
     "height": 34,
     "x": 4,
     "y": 4,
     "pixelRatio": 2
   },
   "red::white_upper:red_lower:107:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
-    "x": 70,
+    "x": 72,
     "y": 4,
     "pixelRatio": 2
   },
   "red::white_upper:red_lower:7:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
-    "x": 136,
+    "x": 140,
     "y": 4,
     "pixelRatio": 2
   },
   "red::white_upper:red_lower:T63:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
     "x": 4,
     "y": 46,
     "pixelRatio": 2
   },
   "red:orange:red_lower:GRP:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
-    "x": 70,
+    "x": 72,
     "y": 46,
     "pixelRatio": 2
   },
   "red:red::CC:white": {
-    "width": 58,
+    "width": 60,
     "height": 34,
-    "x": 136,
+    "x": 140,
     "y": 46,
     "pixelRatio": 2
   },
   "red:red:white_bar:E7:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
     "x": 4,
     "y": 88,
     "pixelRatio": 2
   },
   "red:white:red_lower:107:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
-    "x": 70,
+    "x": 72,
     "y": 88,
     "pixelRatio": 2
   },
   "red:white:red_lower:11.10:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
-    "x": 136,
+    "x": 140,
     "y": 88,
     "pixelRatio": 2
   },
   "red:white:red_lower:11:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
     "x": 4,
     "y": 130,
     "pixelRatio": 2
   },
   "red:white:red_lower:7:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
-    "x": 70,
+    "x": 72,
     "y": 130,
     "pixelRatio": 2
   },
   "white::white_upper:red_lower:T65:black": {
-    "width": 58,
+    "width": 60,
     "height": 34,
-    "x": 136,
+    "x": 140,
     "y": 130,
     "pixelRatio": 2
   }
