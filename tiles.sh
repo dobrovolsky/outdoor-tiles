@@ -9,16 +9,14 @@ java_memory=16g
 planetiler_version=0.10.2
 tiles_image="gpx-studio-tiles:$planetiler_version"
 demo_image=ghcr.io/astral-sh/uv:0.12.17-python3.14-trixie-slim
-openmaptiles_repository=https://github.com/openmaptiles/planetiler-openmaptiles.git
-openmaptiles_commit=7adf3bbc34576a3c7e70e069670f404152d88f9e
-
 usage() {
     cat <<'EOF'
 Usage:
-  ./tiles.sh generate [basemap|poi|routes ...] [options]
-  ./tiles.sh generate-local [basemap|poi|routes ...] [options]
+  ./tiles.sh generate [low-zoom-outdoor|poi|trails ...] (--country PATH ... | --world) [options]
+  ./tiles.sh generate-local [low-zoom-outdoor|poi|trails ...] (--country PATH ... | --world) [options]
+  ./tiles.sh generate-world-low-zoom-outdoor
   ./tiles.sh generate-world-poi
-  ./tiles.sh generate-world-routes
+  ./tiles.sh generate-world-trails
   ./tiles.sh demo
   ./tiles.sh deploy
 
@@ -43,26 +41,12 @@ generate() {
         --workdir /data \
         "$tiles_image" \
         "--java-memory=$java_memory" \
-        --basemap-scope=country \
-        --poi-scope=country \
-        --routes-scope=country \
-        "--planetiler-version=$planetiler_version" \
-        "--openmaptiles-repository=$openmaptiles_repository" \
-        "--openmaptiles-commit=$openmaptiles_commit" \
-        --replace \
         "$@"
 }
 
 generate_local() {
-    uv run python ./scripts/generate.py \
+    PLANETILER_VERSION="$planetiler_version" uv run python ./scripts/generate.py \
         "--java-memory=$java_memory" \
-        --basemap-scope=country \
-        --poi-scope=country \
-        --routes-scope=country \
-        "--planetiler-version=$planetiler_version" \
-        "--openmaptiles-repository=$openmaptiles_repository" \
-        "--openmaptiles-commit=$openmaptiles_commit" \
-        --replace \
         "$@"
 }
 
@@ -86,15 +70,16 @@ fi
 case "$command" in
     generate) generate "$@" ;;
     generate-local) generate_local "$@" ;;
-    generate-world-poi) generate poi --scope world "$@" ;;
-    generate-world-routes) generate routes --scope world "$@" ;;
+    generate-world-low-zoom-outdoor) generate low-zoom-outdoor --world "$@" ;;
+    generate-world-poi) generate poi --world "$@" ;;
+    generate-world-trails) generate trails --world "$@" ;;
     demo) demo "$@" ;;
     deploy)
         mkdir -p "$HOME/media/tiles"
         cp output/*.mbtiles "$HOME/media/tiles/"
-        if [ -f output/routes-sprite.json ]; then
-            cp output/routes-sprite.json output/routes-sprite.png \
-                output/routes-sprite@2x.json output/routes-sprite@2x.png \
+        if [ -f output/trails-sprite.json ]; then
+            cp output/trails-sprite.json output/trails-sprite.png \
+                output/trails-sprite@2x.json output/trails-sprite@2x.png \
                 "$HOME/media/tiles/"
         fi
         ;;

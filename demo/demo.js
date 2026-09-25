@@ -1,5 +1,5 @@
 const center = [1.59033, 42.53313];
-const zoom = 12
+const zoom = 11;
 const tileUrl = (name) => `${location.origin}/tiles/${name}`;
 const stylePath = '/styles';
 const openFreeMapStyleUrl = 'https://tiles.openfreemap.org/styles/liberty';
@@ -195,7 +195,7 @@ function poiPopupContent(feature, coordinates) {
     return root;
 }
 
-function routePopupContent(features, coordinates) {
+function trailPopupContent(features, coordinates) {
     const root = document.createElement('div');
     root.className = 'feature-popup';
     root.append(coordinateText(coordinates));
@@ -204,22 +204,22 @@ function routePopupContent(features, coordinates) {
     body.className = 'feature-popup__body';
     for (const feature of features) {
         const properties = feature.properties;
-        const route = document.createElement('section');
-        route.className = 'route-popup__route';
+        const trail = document.createElement('section');
+        trail.className = 'trail-popup__trail';
 
         const title = document.createElement('h3');
         title.textContent =
             properties.name ||
             properties.ref ||
-            `${properties.class || 'route'} route`;
-        route.append(title);
+            `${properties.class || 'OSM'} trail`;
+        trail.append(title);
 
         const details = { ...properties };
         if (properties.relation_id !== undefined) {
             details.osm = `https://www.openstreetmap.org/relation/${properties.relation_id}`;
         }
-        route.append(detailsTable(details));
-        body.append(route);
+        trail.append(detailsTable(details));
+        body.append(trail);
     }
     root.append(body);
     return root;
@@ -245,24 +245,29 @@ async function main(maplibregl, demSource, SwipeControl) {
     const [customBasemap, openFreeMap, hiking, cycling, poi] = await Promise.all([
         getJson(`${stylePath}/libertyTopo.json`),
         getJson(openFreeMapStyleUrl),
-        getJson(`${stylePath}/hikingRoutes.json`),
-        getJson(`${stylePath}/cyclingRoutes.json`),
+        getJson(`${stylePath}/hikingTrails.json`),
+        getJson(`${stylePath}/cyclingTrails.json`),
         getJson(tileUrl('poi')),
     ]);
 
-    const routeStyleLayers = [...hiking.layers, ...cycling.layers];
-    const routeLayers = [
-        ...routeStyleLayers.filter((layer) => layer.type !== 'symbol'),
-        ...routeStyleLayers.filter((layer) => layer.type === 'symbol'),
+    const trailStyleLayers = [...hiking.layers, ...cycling.layers];
+    const trailLayers = [
+        ...trailStyleLayers.filter((layer) => layer.type !== 'symbol'),
+        ...trailStyleLayers.filter((layer) => layer.type === 'symbol'),
     ];
     const poiStyleLayers = poiLayers(poi);
-    const routeLayerIds = routeLayers.map(({ id }) => id);
+    const trailLayerIds = trailLayers.map(({ id }) => id);
     const poiLayerIds = poiStyleLayers.map(({ id }) => id);
     const contourLayerIds = [
         'contours_m',
         'contours_index_m',
         'contours_label_m',
     ];
+    const overlayLayerIds = new Set([
+        ...contourLayerIds,
+        ...trailLayerIds,
+        ...poiLayerIds,
+    ]);
     const custom = namespaceBasemap(customBasemap, 'custom');
     const openfreemap = namespaceBasemap(openFreeMap, 'openfreemap');
     const customLayerIds = custom.layers.map(({ id }) => id);
@@ -273,16 +278,15 @@ async function main(maplibregl, demSource, SwipeControl) {
         style.sprite = [
             { id: 'default', url: customBasemap.sprite },
             {
-                id: 'routes',
-                url: `${location.origin}/static/tiles/routes-sprite`,
+                id: 'trails',
+                url: `${location.origin}/static/tiles/trails-sprite`,
             },
         ];
         style.sources = { ...custom.sources, ...openfreemap.sources };
         style.layers = [...custom.layers, ...openfreemap.layers];
-        style.sources['custom-openmaptiles'].url = tileUrl('openmaptiles');
-        style.sources.routes = {
-            ...hiking.sources.routes,
-            url: tileUrl('routes'),
+        style.sources.trails = {
+            ...hiking.sources.trails,
+            url: tileUrl('trails'),
         };
         style.sources['poi-vector'] = {
             type: 'vector',
@@ -290,9 +294,14 @@ async function main(maplibregl, demSource, SwipeControl) {
         };
         addContours(style, demSource);
         style.layers.push(
-            ...structuredClone(routeLayers),
+            ...structuredClone(trailLayers),
             ...structuredClone(poiStyleLayers),
         );
+        for (const layer of style.layers) {
+            if (overlayLayerIds.has(layer.id)) {
+                layer.layout = { ...layer.layout, visibility: 'none' };
+            }
+        }
         return style;
     }
 
@@ -311,12 +320,12 @@ async function main(maplibregl, demSource, SwipeControl) {
         leftLayers: [
             ...customLayerIds,
             ...contourLayerIds,
-            ...routeLayerIds,
+            ...trailLayerIds,
         ],
         rightLayers: [
             ...openFreeMapLayerIds,
             ...contourLayerIds,
-            ...routeLayerIds,
+            ...trailLayerIds,
         ],
         showPanel: false,
     });
@@ -328,10 +337,10 @@ async function main(maplibregl, demSource, SwipeControl) {
             left: document.querySelector('#contours-left'),
             right: document.querySelector('#contours-right'),
         },
-        routes: {
-            layerIds: routeLayerIds,
-            left: document.querySelector('#routes-left'),
-            right: document.querySelector('#routes-right'),
+        trails: {
+            layerIds: trailLayerIds,
+            left: document.querySelector('#trails-left'),
+            right: document.querySelector('#trails-right'),
         },
         poi: {
             layerIds: poiLayerIds,
@@ -343,18 +352,6 @@ async function main(maplibregl, demSource, SwipeControl) {
         closeButton: false,
         maxWidth: '420px',
     });
-
-    function setVisibility(targetMap, layerIds, visible) {
-        for (const layerId of layerIds) {
-            if (targetMap?.getLayer(layerId)) {
-                targetMap.setLayoutProperty(
-                    layerId,
-                    'visibility',
-                    visible ? 'visible' : 'none',
-                );
-            }
-        }
-    }
 
     function applyOverlayVisibility() {
         const leftOverlayIds = [];
@@ -369,13 +366,6 @@ async function main(maplibregl, demSource, SwipeControl) {
             ...openFreeMapLayerIds,
             ...rightOverlayIds,
         ]);
-
-        for (const overlay of Object.values(overlays)) {
-            if (overlay.left.checked || overlay.right.checked) continue;
-            for (const targetMap of [map, swipeControl.getComparisonMap()]) {
-                setVisibility(targetMap, overlay.layerIds, false);
-            }
-        }
     }
 
     function renderedMap(point) {
@@ -397,15 +387,15 @@ async function main(maplibregl, demSource, SwipeControl) {
         return targetMap.queryRenderedFeatures(point, { layers: existingLayers });
     }
 
-    function renderedRoutes(point) {
+    function renderedTrails(point) {
         const targetMap = renderedMap(point);
         if (
-            !overlayEnabledAtPoint(overlays.routes, point) ||
+            !overlayEnabledAtPoint(overlays.trails, point) ||
             !targetMap?.isStyleLoaded()
         ) {
             return [];
         }
-        const existingLayers = routeLayerIds.filter((id) => targetMap.getLayer(id));
+        const existingLayers = trailLayerIds.filter((id) => targetMap.getLayer(id));
         const radius = 5;
         const features = targetMap.queryRenderedFeatures(
             [
@@ -442,7 +432,7 @@ async function main(maplibregl, demSource, SwipeControl) {
 
     map.on('mousemove', (event) => {
         map.getCanvas().style.cursor =
-            renderedPoi(event.point).length || renderedRoutes(event.point).length
+            renderedPoi(event.point).length || renderedTrails(event.point).length
                 ? 'pointer'
                 : '';
     });
@@ -460,12 +450,12 @@ async function main(maplibregl, demSource, SwipeControl) {
             return;
         }
 
-        const routeFeatures = renderedRoutes(event.point);
-        if (routeFeatures.length) {
+        const trailFeatures = renderedTrails(event.point);
+        if (trailFeatures.length) {
             const coordinates = [event.lngLat.lng, event.lngLat.lat];
             popup
                 .setLngLat(coordinates)
-                .setDOMContent(routePopupContent(routeFeatures, coordinates))
+                .setDOMContent(trailPopupContent(trailFeatures, coordinates))
                 .addTo(map);
             return;
         }

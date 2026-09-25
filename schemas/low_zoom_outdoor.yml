@@ -1,0 +1,189 @@
+schema_name: Low-zoom outdoor
+schema_description: Outdoor roads shown before they appear in OpenFreeMap
+version: 1
+is_overlay: true
+
+args:
+    minzoom: 10
+    maxzoom: 13
+    tile_warning_size_mb: 1
+
+sources:
+    osm:
+        type: osm
+        url: https://planet.openstreetmap.org/pbf/planet-latest.osm.pbf
+        # Fallback for direct Planetiler runs. scripts/generate.py overrides
+        # this with --osm-path for the configured country/world scope.
+        local_path: sources/planet-latest.osm.pbf
+
+definitions:
+    transportation: &transportation
+        source: osm
+        geometry: line
+    subclass: &subclass
+        key: subclass
+        tag_value: highway
+    surface: &surface
+        key: surface
+        value: paved
+        include_when:
+            surface:
+                - paved
+                - asphalt
+                - concrete
+                - concrete:lanes
+                - concrete:plates
+                - paving_stones
+                - sett
+                - unhewn_cobblestone
+                - cobblestone
+                - metal
+                - wood
+    bridge: &bridge
+        key: brunnel
+        value: bridge
+        include_when:
+            bridge: __any__
+    tunnel: &tunnel
+        key: brunnel
+        value: tunnel
+        include_when:
+            tunnel: __any__
+    access: &access
+        key: access
+        tag_value: access
+    bicycle: &bicycle
+        key: bicycle
+        tag_value: bicycle
+    service: &service
+        key: service
+        tag_value: service
+
+# Keep scripts/filter_tags.py in sync when changing include_when filters.
+layers:
+    - id: transportation
+      buffer: 4
+      features:
+          - <<: *transportation
+            include_when:
+                highway: tertiary
+            min_zoom: 10
+            max_zoom: 10
+            attributes:
+                - key: class
+                  value: tertiary
+                - *surface
+                - *bridge
+                - *tunnel
+                - *access
+                - *bicycle
+                - *service
+          - <<: *transportation
+            include_when:
+                highway: [residential, unclassified]
+            min_zoom: 10
+            max_zoom: 11
+            attributes:
+                - key: class
+                  value: minor
+                - *surface
+                - *bridge
+                - *tunnel
+                - *access
+                - *bicycle
+                - *service
+          - <<: *transportation
+            include_when:
+                highway: [living_street, road]
+            min_zoom: 10
+            max_zoom: 12
+            attributes:
+                - key: class
+                  value: minor
+                - *surface
+                - *bridge
+                - *tunnel
+                - *access
+                - *bicycle
+                - *service
+          - <<: *transportation
+            include_when:
+                highway: service
+            min_zoom: 10
+            max_zoom: 12
+            attributes:
+                - key: class
+                  value: service
+                - *surface
+                - *bridge
+                - *tunnel
+                - *access
+                - *bicycle
+                - *service
+          - <<: *transportation
+            include_when:
+                __all__:
+                    - highway: service
+                    - service: [driveway, parking_aisle]
+            min_zoom: 13
+            max_zoom: 13
+            attributes:
+                - key: class
+                  value: service
+                - *surface
+                - *bridge
+                - *tunnel
+                - *access
+                - *bicycle
+                - *service
+          - <<: *transportation
+            include_when:
+                highway: track
+            min_zoom: 11
+            max_zoom: 13
+            attributes:
+                - key: class
+                  value: track
+                - *surface
+                - *bridge
+                - *tunnel
+                - *access
+                - *bicycle
+                - *service
+          - <<: *transportation
+            include_when:
+                highway: [path, footway, cycleway, bridleway, steps]
+            min_zoom: 11
+            max_zoom: 13
+            attributes:
+                - key: class
+                  value: path
+                - *subclass
+                - *surface
+                - *bridge
+                - *tunnel
+                - *access
+                - *bicycle
+                - *service
+          - <<: *transportation
+            include_when:
+                highway: pedestrian
+            min_zoom: 11
+            max_zoom: 13
+            attributes:
+                - key: class
+                  value: path
+                - *subclass
+                - *surface
+                - *bridge
+                - *tunnel
+                - *access
+                - *bicycle
+                - *service
+      tile_post_process:
+          merge_line_strings:
+              min_length: 1
+              min_length_at_max_zoom: 0
+              tolerance: 0.1
+              tolerance_at_max_zoom: 0.0625
+              buffer: 4

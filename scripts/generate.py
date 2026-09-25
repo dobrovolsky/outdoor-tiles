@@ -4,33 +4,28 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from collections import defaultdict
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
-
-import yaml
 
 from common import TILES_DIR, require, run
+from filter_tags import FILTER_TAGS_BY_TARGET
 
 SCRIPTS_DIR = TILES_DIR / "scripts"
 SOURCES_DIR = TILES_DIR / "sources"
 OUTPUT_DIR = TILES_DIR / "output"
 TMP_DIR = TILES_DIR / "tmp"
-BASEMAP_PROFILE_JAR = TILES_DIR / "planetiler-openmaptiles.jar"
-BASEMAP_PROFILE_VERSION = TILES_DIR / ".planetiler-openmaptiles.version"
 PLANETILER_JAR = TILES_DIR / "planetiler.jar"
-PLANETILER_VERSION = TILES_DIR / ".planetiler.version"
-ROUTES_PROFILE_JAR = TILES_DIR / "routes-profile.jar"
-BASEMAP_PROFILE_SOURCE = TILES_DIR / "profiles" / "openmaptiles" / "Transportation.java"
-BASEMAP_PROFILE_BUILDER = SCRIPTS_DIR / "build_profile.py"
-ROUTES_PROFILE_BUILDER = SCRIPTS_DIR / "build_routes.py"
-ROUTES_PROFILE_SOURCE_DIR = TILES_DIR / "profiles" / "routes"
+PLANETILER_VERSION_FILE = TILES_DIR / ".planetiler.version"
+TRAILS_PROFILE_JAR = TILES_DIR / "trails-profile.jar"
+TRAILS_PROFILE_BUILDER = SCRIPTS_DIR / "build_trails.py"
+TRAILS_PROFILE_SOURCE_DIR = TILES_DIR / "profiles" / "trails"
+LOW_ZOOM_OUTDOOR_SCHEMA = TILES_DIR / "schemas" / "low_zoom_outdoor.yml"
 SHIELD_SPRITE_GENERATOR = TILES_DIR / "tools" / "waymarked-sprite" / "generate.py"
 SHIELDS_PATH = TMP_DIR / "shields.txt"
-ROUTES_SPRITE_PATH = OUTPUT_DIR / "routes-sprite"
-TARGETS = ("basemap", "poi", "routes")
+TRAILS_SPRITE_PATH = OUTPUT_DIR / "trails-sprite"
+TARGETS = ("low-zoom-outdoor", "poi", "trails")
 
 
 def log(message: str) -> None:
@@ -41,18 +36,10 @@ def log(message: str) -> None:
 class Options:
     scope: str
     countries: tuple[str, ...]
-    openmaptiles_repository: str
-    openmaptiles_commit: str
-    replace: bool
 
 
 def newer(source: Path, destination: Path) -> bool:
     return source.stat().st_mtime > destination.stat().st_mtime
-
-
-def prepare_output(output: Path, replace: bool) -> None:
-    if output.exists() and not replace:
-        raise SystemExit(f"Output exists: {output}\nRe-run with --replace to replace it.")
 
 
 class ToolRunner:
@@ -73,18 +60,11 @@ class ToolRunner:
             *command,
         )
 
-    def run_basemap(self, *args: str) -> None:
-        self.java(
-            "-jar",
-            self.path(BASEMAP_PROFILE_JAR),
-            *args,
-        )
-
-    def run_routes(self, *args: str) -> None:
-        main_class = "studio.gpx.tiles.routes.RoutesProfile"
+    def run_trails(self, *args: str) -> None:
+        main_class = "tiles.trails.TrailsProfile"
         self.java(
             "-cp",
-            os.pathsep.join(map(self.path, (ROUTES_PROFILE_JAR, PLANETILER_JAR))),
+            os.pathsep.join(map(self.path, (TRAILS_PROFILE_JAR, PLANETILER_JAR))),
             main_class,
             *args,
         )
@@ -104,8 +84,8 @@ class ToolRunner:
 def ensure_planetiler_jar(version: str) -> None:
     if (
         PLANETILER_JAR.is_file()
-        and PLANETILER_VERSION.is_file()
-        and PLANETILER_VERSION.read_text().strip() == version
+        and PLANETILER_VERSION_FILE.is_file()
+        and PLANETILER_VERSION_FILE.read_text().strip() == version
     ):
         return
     temporary = PLANETILER_JAR.with_suffix(".tmp.jar")
@@ -126,7 +106,7 @@ def ensure_planetiler_jar(version: str) -> None:
             f"https://github.com/onthegomap/planetiler/releases/download/v{version}/planetiler.jar",
         )
     temporary.replace(PLANETILER_JAR)
-    PLANETILER_VERSION.write_text(f"{version}\n")
+    PLANETILER_VERSION_FILE.write_text(f"{version}\n")
 
 
 def country_cache_path(country: str, stage: str) -> Path:
@@ -221,46 +201,6 @@ def ensure_world_source(options: Options) -> Path:
     return planet
 
 
-@contextmanager
-def source(options: Options, runner: ToolRunner) -> Iterator[Path]:
-    if options.scope == "country":
-        with merged_sources(ensure_country_sources(options), "countries", runner) as path:
-            yield path
-    else:
-        yield ensure_world_source(options)
-
-
-def generate_osmium_filters(schema_path: Path) -> str:
-    schema = yaml.safe_load(schema_path.read_text())
-    filters = defaultdict(set)
-    presence_filters = set()
-
-    def collect(condition: dict) -> None:
-        for key, value in condition.items():
-            if key.startswith("__"):
-                for nested_condition in value:
-                    collect(nested_condition)
-            elif value == "__any__":
-                if key != "name":
-                    presence_filters.add(key)
-            else:
-                filters[key].update(value if isinstance(value, list) else [value])
-
-    for layer in schema["layers"]:
-        for feature in layer.get("features", []):
-            if condition := feature.get("include_when"):
-                collect(condition)
-
-    expressions = []
-    for key in sorted(filters.keys() | presence_filters):
-        if key in presence_filters:
-            expressions.append(f"nwr/{key}")
-        else:
-            values = ",".join(sorted(map(str, filters[key])))
-            expressions.append(f"nwr/{key}={values}")
-    return "\n".join(expressions) + "\n"
-
-
 def filter_source(kind: str, raw: Path, filtered: Path, runner: ToolRunner) -> Path:
     if filtered.is_file():
         log(f"Reusing {filtered}")
@@ -270,30 +210,19 @@ def filter_source(kind: str, raw: Path, filtered: Path, runner: ToolRunner) -> P
     temporary.unlink(missing_ok=True)
     log(f"Filtering {kind} data from {raw}...")
 
-    if kind == "routes":
-        expression_options = []
-        inline_expressions = ["r/route=hiking,foot,bicycle"]
-        remove_tags = []
-    elif kind == "poi":
-        expressions = TMP_DIR / "poi-filters.txt"
-        expressions.write_text(
-            generate_osmium_filters(TILES_DIR / "schemas" / "poi.yml")
-        )
-        expression_options = [f"--expressions={runner.path(expressions)}"]
-        inline_expressions = []
-        remove_tags = ["--remove-tags"]
-    else:
+    try:
+        filter_tags = FILTER_TAGS_BY_TARGET[kind]
+    except KeyError:
         raise SystemExit(f"Unknown filtered source: {kind}")
 
     runner.run_osmium(
         "tags-filter",
         "--progress",
-        *remove_tags,
-        *expression_options,
+        *(["--remove-tags"] if kind == "poi" else []),
         f"--output={runner.path(temporary)}",
         "--output-format=pbf",
         runner.path(raw),
-        *inline_expressions,
+        *filter_tags,
     )
     temporary.replace(filtered)
     return filtered
@@ -320,70 +249,20 @@ def filtered_source(kind: str, options: Options, runner: ToolRunner) -> Iterator
     yield filter_source(kind, ensure_world_source(options), filtered, runner)
 
 
-def ensure_basemap_profile(repository: str, commit: str) -> None:
-    expected_version = f"{repository}@{commit}"
-    correct_version = (
-        BASEMAP_PROFILE_VERSION.is_file()
-        and BASEMAP_PROFILE_VERSION.read_text().strip() == expected_version
-    )
-    inputs = (BASEMAP_PROFILE_SOURCE, BASEMAP_PROFILE_BUILDER)
-    if (
-        not BASEMAP_PROFILE_JAR.is_file()
-        or any(newer(path, BASEMAP_PROFILE_JAR) for path in inputs)
-        or not correct_version
-    ):
-        run(
-            sys.executable,
-            str(BASEMAP_PROFILE_BUILDER),
-            "--repository",
-            repository,
-            "--commit",
-            commit,
-        )
-
-
-def ensure_routes_profile(planetiler_version: str) -> None:
+def ensure_trails_profile(planetiler_version: str) -> None:
     ensure_planetiler_jar(planetiler_version)
     inputs = (
-        ROUTES_PROFILE_BUILDER,
+        TRAILS_PROFILE_BUILDER,
         PLANETILER_JAR,
-        *ROUTES_PROFILE_SOURCE_DIR.rglob("*.java"),
+        *TRAILS_PROFILE_SOURCE_DIR.rglob("*.java"),
     )
-    if not ROUTES_PROFILE_JAR.is_file() or any(newer(path, ROUTES_PROFILE_JAR) for path in inputs):
-        run(sys.executable, str(ROUTES_PROFILE_BUILDER))
-
-
-def generate_basemap(options: Options, runner: ToolRunner) -> None:
-    output = OUTPUT_DIR / "openmaptiles.mbtiles"
-    temporary = OUTPUT_DIR / "openmaptiles.tmp.mbtiles"
-    prepare_output(output, options.replace)
-    ensure_basemap_profile(
-        options.openmaptiles_repository,
-        options.openmaptiles_commit,
-    )
-    temporary.unlink(missing_ok=True)
-
-    log(f"Generating basemap ({options.scope})...")
-    with source(options, runner) as osm_pbf:
-        runner.run_basemap(
-            f"--osm-path={runner.path(osm_pbf)}",
-            "--download",
-            "--download-threads=10",
-            "--download-chunk-size-mb=1000",
-            "--fetch-wikidata",
-            f"--output={runner.path(temporary)}",
-            "--nodemap-type=sortedtable",
-            "--storage=mmap",
-            "--force",
-        )
-    temporary.replace(output)
-    log(f"Done: {output}")
+    if not TRAILS_PROFILE_JAR.is_file() or any(newer(path, TRAILS_PROFILE_JAR) for path in inputs):
+        run(sys.executable, str(TRAILS_PROFILE_BUILDER))
 
 
 def generate_poi(options: Options, runner: ToolRunner) -> None:
     output = OUTPUT_DIR / "poi.mbtiles"
     temporary = OUTPUT_DIR / "poi.tmp.mbtiles"
-    prepare_output(output, options.replace)
     ensure_planetiler_jar(runner.version)
     temporary.unlink(missing_ok=True)
 
@@ -399,17 +278,34 @@ def generate_poi(options: Options, runner: ToolRunner) -> None:
     log(f"Done: {output}")
 
 
-def generate_routes(options: Options, runner: ToolRunner) -> None:
-    output = OUTPUT_DIR / "routes.mbtiles"
-    temporary = OUTPUT_DIR / "routes.tmp.mbtiles"
-    prepare_output(output, options.replace)
-    ensure_routes_profile(runner.version)
+def generate_low_zoom_outdoor(options: Options, runner: ToolRunner) -> None:
+    output = OUTPUT_DIR / "low-zoom-outdoor.mbtiles"
+    temporary = OUTPUT_DIR / "low-zoom-outdoor.tmp.mbtiles"
+    ensure_planetiler_jar(runner.version)
     temporary.unlink(missing_ok=True)
 
-    log(f"Generating hiking, foot and bicycle routes ({options.scope})...")
-    with filtered_source("routes", options, runner) as routes_pbf:
-        runner.run_routes(
-            f"--osm-path={runner.path(routes_pbf)}",
+    log(f"Generating early outdoor roads ({options.scope})...")
+    with filtered_source("low-zoom-outdoor", options, runner) as outdoor_pbf:
+        runner.run_custom(
+            f"--schema={runner.path(LOW_ZOOM_OUTDOOR_SCHEMA)}",
+            f"--osm-path={runner.path(outdoor_pbf)}",
+            f"--output={runner.path(temporary)}",
+            "--force",
+        )
+    temporary.replace(output)
+    log(f"Done: {output}")
+
+
+def generate_trails(options: Options, runner: ToolRunner) -> None:
+    output = OUTPUT_DIR / "trails.mbtiles"
+    temporary = OUTPUT_DIR / "trails.tmp.mbtiles"
+    ensure_trails_profile(runner.version)
+    temporary.unlink(missing_ok=True)
+
+    log(f"Generating hiking, foot and bicycle trails ({options.scope})...")
+    with filtered_source("trails", options, runner) as trails_pbf:
+        runner.run_trails(
+            f"--osm-path={runner.path(trails_pbf)}",
             f"--output={runner.path(temporary)}",
             f"--shields-path={runner.path(SHIELDS_PATH)}",
             "--minzoom=6",
@@ -433,7 +329,7 @@ def generate_routes(options: Options, runner: ToolRunner) -> None:
         *sprite_command,
         str(SHIELD_SPRITE_GENERATOR),
         str(SHIELDS_PATH),
-        str(ROUTES_SPRITE_PATH),
+        str(TRAILS_SPRITE_PATH),
     )
     temporary.replace(output)
     log(f"Done: {output}")
@@ -442,60 +338,45 @@ def generate_routes(options: Options, runner: ToolRunner) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate vector tile targets")
     parser.add_argument("targets", nargs="*", choices=TARGETS)
-    parser.add_argument(
-        "--scope",
-        choices=("country", "world"),
-        help="override target-specific scopes",
-    )
-    for target in TARGETS:
-        parser.add_argument(
-            f"--{target}-scope",
-            choices=("country", "world"),
-            required=True,
-        )
     parser.add_argument("--java-memory", required=True)
-    parser.add_argument("--planetiler-version", required=True)
-    parser.add_argument("--openmaptiles-repository", required=True)
-    parser.add_argument("--openmaptiles-commit", required=True)
-    parser.add_argument(
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument(
         "--country",
         action="append",
         default=[],
         metavar="GEOFABRIK_PATH",
         help="Geofabrik path; repeat for multiple countries (example: europe/monaco)",
     )
-    parser.add_argument("--replace", action="store_true")
+    source.add_argument(
+        "--world",
+        action="store_true",
+        help="use the full OpenStreetMap planet",
+    )
     args = parser.parse_args()
 
     targets = args.targets or TARGETS
-    scopes = {
-        target: args.scope or getattr(args, f"{target}_scope")
-        for target in targets
-    }
-    if "country" in scopes.values() and not args.country:
-        parser.error(
-            "--country is required for country scope "
-            "(example: --country europe/monaco)"
-        )
+    scope = "world" if args.world else "country"
+    planetiler_version = os.environ.get("BUNDLED_PLANETILER_VERSION") or os.environ.get(
+        "PLANETILER_VERSION"
+    )
+    if not planetiler_version:
+        parser.error("PLANETILER_VERSION is not set")
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     SOURCES_DIR.mkdir(exist_ok=True)
     TMP_DIR.mkdir(exist_ok=True)
-    runner = ToolRunner(args.java_memory, args.planetiler_version)
+    runner = ToolRunner(args.java_memory, planetiler_version)
 
     generators = {
-        "basemap": generate_basemap,
+        "low-zoom-outdoor": generate_low_zoom_outdoor,
         "poi": generate_poi,
-        "routes": generate_routes,
+        "trails": generate_trails,
     }
     for target in targets:
-        log(f"Starting target: {target} ({scopes[target]})")
+        log(f"Starting target: {target} ({scope})")
         options = Options(
-            scope=scopes[target],
+            scope=scope,
             countries=tuple(args.country),
-            openmaptiles_repository=args.openmaptiles_repository,
-            openmaptiles_commit=args.openmaptiles_commit,
-            replace=args.replace,
         )
         generators[target](options, runner)
         log(f"Finished target: {target}")

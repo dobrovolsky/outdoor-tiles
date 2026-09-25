@@ -5,10 +5,10 @@ from pathlib import Path
 
 from common import TILES_DIR, require, run
 
-SOURCE_DIR = TILES_DIR / "profiles" / "routes"
-BUILD_DIR = TILES_DIR / "tmp" / "routes-classes"
+SOURCE_DIR = TILES_DIR / "profiles" / "trails"
+BUILD_DIR = TILES_DIR / "tmp" / "trails-classes"
 PLANETILER_JAR = TILES_DIR / "planetiler.jar"
-OUTPUT_JAR = TILES_DIR / "routes-profile.jar"
+OUTPUT_JAR = TILES_DIR / "trails-profile.jar"
 
 
 def java_sources() -> list[Path]:
@@ -18,7 +18,7 @@ def java_sources() -> list[Path]:
     return sources
 
 
-def build_routes(sources: list[Path], temporary: Path) -> None:
+def build_trails(sources: list[Path], temporary: Path) -> None:
     require("javac")
     require("jar")
     run(
@@ -53,7 +53,7 @@ def main() -> None:
     temporary = OUTPUT_JAR.with_suffix(".tmp.jar")
     temporary.unlink(missing_ok=True)
 
-    build_routes(sources, temporary)
+    build_trails(sources, temporary)
 
     temporary.replace(OUTPUT_JAR)
     print(f"Built {OUTPUT_JAR}")

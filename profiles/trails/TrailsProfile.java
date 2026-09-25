@@ -1,4 +1,4 @@
-package studio.gpx.tiles.routes;
+package tiles.trails;
 
 import com.onthegomap.planetiler.FeatureCollector;
 import com.onthegomap.planetiler.FeatureMerge;
@@ -11,44 +11,63 @@ import com.onthegomap.planetiler.reader.SourceFeature;
 import com.onthegomap.planetiler.reader.osm.OsmElement;
 import com.onthegomap.planetiler.reader.osm.OsmReader;
 import com.onthegomap.planetiler.reader.osm.OsmRelationInfo;
+import com.onthegomap.planetiler.util.Translations;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /** Standalone vector overlay for OSM hiking, foot and bicycle route relations. */
-public final class RoutesProfile implements Profile {
+public final class TrailsProfile implements Profile {
 
   public static final String SOURCE_NAME = "osm";
-  public static final String LAYER_NAME = "routes";
-  public static final String LABEL_LAYER_NAME = "route_labels";
+  public static final String LAYER_NAME = "trails";
+  public static final String LABEL_LAYER_NAME = "trail_labels";
   private static final Set<String> ROUTE_CLASSES = Set.of("hiking", "foot", "bicycle");
   private static final Set<String> LOW_ZOOM_NETWORKS = Set.of("iwn", "nwn", "icn", "ncn");
   private static final Set<String> COLORS = Set.of(
     "black", "blue", "brown", "green", "orange", "purple", "red", "yellow"
   );
+  // Keep this in sync with https://github.com/openmaptiles/openmaptiles/blob/master/openmaptiles.yaml
+  private static final List<String> DEFAULT_LANGUAGES = List.of(
+    "af", "am", "ar", "az", "be", "bg", "bn", "br", "bs", "ca", "co", "cs", "cy", "da", "de", "el",
+    "en", "eo", "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gd", "he", "hi", "hr", "hu", "hy",
+    "id", "is", "it", "ja", "ja_kana", "ja_rm", "ja-Latn", "ja-Hira", "ka", "kk", "kn", "ko", "ko-Latn",
+    "ku", "la", "lb", "lt", "lv", "mk", "mt", "ml", "nl", "no", "oc", "pa", "pnb", "pl", "pt", "rm",
+    "ro", "ru", "sk", "sl", "sq", "sr", "sr-Latn", "sv", "ta", "te", "th", "tok", "tr", "uk", "ur",
+    "vi", "zh", "zh-Hant", "zh-Hans"
+  );
+  private final Translations translations;
   private final Set<String> symbols = new ConcurrentSkipListSet<>();
+
+  public TrailsProfile(Translations translations) {
+    this.translations = translations;
+  }
 
   public static void main(String[] args) throws Exception {
     Arguments arguments = Arguments.fromArgsOrConfigFile(args);
     Path osmPath = arguments.inputFile(
       "osm_path",
       "filtered OSM PBF containing route relations and their referenced ways/nodes",
-      Path.of("sources/routes-country.osm.pbf")
+      Path.of("sources/trails-country.osm.pbf")
     );
     Path shieldsPath = arguments.file(
       "shields_path",
       "output text file containing unique OSMC symbols",
       Path.of("tmp/shields.txt")
     );
-    RoutesProfile profile = new RoutesProfile();
+    Planetiler runner = Planetiler.create(arguments)
+      .setDefaultLanguages(DEFAULT_LANGUAGES);
+    TrailsProfile profile = new TrailsProfile(runner.translations());
 
-    Planetiler.create(arguments)
+    runner
       .setProfile(profile)
       .addOsmSource(SOURCE_NAME, osmPath)
-      .setOutput(Path.of("output/routes.mbtiles"))
+      .setOutput(Path.of("output/trails.mbtiles"))
       .run();
     Files.createDirectories(shieldsPath.toAbsolutePath().getParent());
     Files.write(shieldsPath, profile.symbols);
@@ -70,14 +89,12 @@ public final class RoutesProfile implements Profile {
       relation.id(),
       routeClass,
       tag(relation, "name"),
-      tag(relation, "name:uk"),
-      tag(relation, "name:en"),
+      Map.copyOf(translations.getTranslations(relation.tags())),
       tag(relation, "ref"),
       tag(relation, "network"),
       tag(relation, "operator"),
       tag(relation, "description"),
-      tag(relation, "description:uk"),
-      tag(relation, "description:en"),
+      localizedTags(relation, "description"),
       tag(relation, "from"),
       tag(relation, "to"),
       tag(relation, "via"),
@@ -101,10 +118,10 @@ public final class RoutesProfile implements Profile {
       return;
     }
 
-    List<OsmReader.RelationMember<Route>> routes = feature.relationInfo(Route.class);
-    for (var member : routes) {
+    List<OsmReader.RelationMember<Route>> trails = feature.relationInfo(Route.class);
+    for (var member : trails) {
       Route route = member.relation();
-      features.line(LAYER_NAME)
+      FeatureCollector.Feature trail = features.line(LAYER_NAME)
         .setId(route.id())
         .setAttr("relation_id", route.id())
         .setAttr("class", route.routeClass())
@@ -113,12 +130,8 @@ public final class RoutesProfile implements Profile {
         .setAttr("network", route.network())
         .setAttr("symbol", route.symbol())
         .setAttr("color", route.color())
-        .setAttrWithMinzoom("name_uk", route.nameUk(), 10)
-        .setAttrWithMinzoom("name_en", route.nameEn(), 10)
         .setAttrWithMinzoom("operator", route.operator(), 10)
         .setAttrWithMinzoom("description", route.description(), 10)
-        .setAttrWithMinzoom("description_uk", route.descriptionUk(), 10)
-        .setAttrWithMinzoom("description_en", route.descriptionEn(), 10)
         .setAttrWithMinzoom("from", route.from(), 10)
         .setAttrWithMinzoom("to", route.to(), 10)
         .setAttrWithMinzoom("via", route.via(), 10)
@@ -142,9 +155,11 @@ public final class RoutesProfile implements Profile {
         .setMinZoom(route.network() != null && LOW_ZOOM_NETWORKS.contains(route.network()) ? 6 : 10)
         .setMinPixelSize(0)
         .setBufferPixels(4);
+      putAttrsWithMinzoom(trail, route.localizedNames(), 10);
+      putAttrsWithMinzoom(trail, route.localizedDescriptions(), 10);
 
-      if (route.symbol() != null || route.ref() != null || route.name() != null) {
-        features.line(LABEL_LAYER_NAME)
+      if (route.symbol() != null || route.ref() != null || route.name() != null || !route.localizedNames().isEmpty()) {
+        FeatureCollector.Feature label = features.line(LABEL_LAYER_NAME)
           .setId(route.id())
           .setAttr("relation_id", route.id())
           .setAttr("class", route.routeClass())
@@ -155,6 +170,7 @@ public final class RoutesProfile implements Profile {
           .setMinZoom(11)
           .setMinPixelSize(0)
           .setBufferPixels(4);
+        route.localizedNames().forEach(label::setAttr);
       }
     }
   }
@@ -167,12 +183,12 @@ public final class RoutesProfile implements Profile {
 
   @Override
   public String name() {
-    return "OSM Routes";
+    return "OSM Trails";
   }
 
   @Override
   public String description() {
-    return "Hiking, foot and bicycle route relations from OpenStreetMap";
+    return "Hiking, foot and bicycle trail relations from OpenStreetMap";
   }
 
   @Override
@@ -214,6 +230,23 @@ public final class RoutesProfile implements Profile {
     return emptyToNull(element.getString(key));
   }
 
+  private Map<String, Object> localizedTags(OsmElement.Relation relation, String key) {
+    String prefix = key + ":";
+    Map<String, Object> result = new HashMap<>();
+    for (var entry : relation.tags().entrySet()) {
+      String tag = entry.getKey();
+      String value = entry.getValue() instanceof String string ? emptyToNull(string) : null;
+      if (tag.startsWith(prefix) && translations.careAboutLanguage(tag.substring(prefix.length())) && value != null) {
+        result.put(tag, value);
+      }
+    }
+    return Map.copyOf(result);
+  }
+
+  private static void putAttrsWithMinzoom(FeatureCollector.Feature feature, Map<String, Object> attrs, int minzoom) {
+    attrs.forEach((key, value) -> feature.setAttrWithMinzoom(key, value, minzoom));
+  }
+
   private static String emptyToNull(String value) {
     return value == null || value.isBlank() ? null : value;
   }
@@ -222,14 +255,12 @@ public final class RoutesProfile implements Profile {
     long id,
     String routeClass,
     String name,
-    String nameUk,
-    String nameEn,
+    Map<String, Object> localizedNames,
     String ref,
     String network,
     String operator,
     String description,
-    String descriptionUk,
-    String descriptionEn,
+    Map<String, Object> localizedDescriptions,
     String from,
     String to,
     String via,

@@ -1,22 +1,22 @@
 {
     "version": 8,
     "sources": {
-        "routes": {
+        "trails": {
             "type": "vector",
-            "url": "/tiles/routes",
+            "url": "/tiles/trails",
             "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap contributors</a>"
         }
     },
     "layers": [
         {
-            "id": "cyclingRoutesHighlight",
+            "id": "hikingTrailsHighlight",
             "type": "line",
-            "source": "routes",
-            "source-layer": "routes",
+            "source": "trails",
+            "source-layer": "trails",
             "minzoom": 6,
             "filter": [
                 "all",
-                ["==", ["get", "class"], "bicycle"],
+                ["match", ["get", "class"], ["foot", "hiking"], true, false],
                 ["==", ["get", "relation_id"], -1]
             ],
             "layout": { "line-join": "round", "line-cap": "round" },
@@ -39,12 +39,46 @@
             }
         },
         {
-            "id": "cyclingRoutesColored",
+            "id": "hikingTrailsUnmarked",
             "type": "line",
-            "source": "routes",
-            "source-layer": "routes",
+            "source": "trails",
+            "source-layer": "trails",
             "minzoom": 6,
-            "filter": ["==", ["get", "class"], "bicycle"],
+            "filter": [
+                "all",
+                ["match", ["get", "class"], ["foot", "hiking"], true, false],
+                ["!", ["has", "color"]]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#8c857f",
+                "line-dasharray": [2.5, 1],
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    6,
+                    1,
+                    12,
+                    2,
+                    13,
+                    3,
+                    15,
+                    3.5
+                ]
+            }
+        },
+        {
+            "id": "hikingTrailsColored",
+            "type": "line",
+            "source": "trails",
+            "source-layer": "trails",
+            "minzoom": 6,
+            "filter": [
+                "all",
+                ["match", ["get", "class"], ["foot", "hiking"], true, false],
+                ["has", "color"]
+            ],
             "layout": { "line-join": "round" },
             "paint": {
                 "line-color": [
@@ -54,8 +88,8 @@
                     "#ffd900",
                     "green",
                     "#4b9e2a",
-                    "red",
-                    "#ed341c",
+                    "blue",
+                    "#2874d8",
                     "brown",
                     "#8b5a3c",
                     "black",
@@ -64,7 +98,7 @@
                     "#a852cc",
                     "orange",
                     "#fa9200",
-                    "#2874d8"
+                    "#ed341c"
                 ],
                 "line-dasharray": [2.5, 1],
                 "line-width": [
@@ -83,14 +117,14 @@
             }
         },
         {
-            "id": "cyclingRoutesLabels",
+            "id": "hikingTrailsLabels",
             "type": "symbol",
-            "source": "routes",
-            "source-layer": "route_labels",
+            "source": "trails",
+            "source-layer": "trail_labels",
             "minzoom": 11,
             "filter": [
                 "all",
-                ["==", ["get", "class"], "bicycle"],
+                ["match", ["get", "class"], ["foot", "hiking"], true, false],
                 ["any", ["has", "symbol"], ["has", "ref"], ["has", "name"]]
             ],
             "layout": {
@@ -99,7 +133,7 @@
                 "icon-image": [
                     "case",
                     ["all", ["has", "symbol"], ["!=", ["get", "symbol"], "no"]],
-                    ["concat", "routes:", ["get", "symbol"]],
+                    ["concat", "trails:", ["get", "symbol"]],
                     ""
                 ],
                 "icon-padding": 2,
@@ -114,7 +148,25 @@
                 "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 16, 13]
             },
             "paint": {
-                "text-color": "#1e59a8",
+                "text-color": [
+                    "match",
+                    ["get", "color"],
+                    "yellow",
+                    "#8a7800",
+                    "green",
+                    "#397b20",
+                    "blue",
+                    "#1e59a8",
+                    "brown",
+                    "#71462f",
+                    "black",
+                    "#222222",
+                    "purple",
+                    "#823ca3",
+                    "orange",
+                    "#bd6600",
+                    "#bc2818"
+                ],
                 "text-halo-color": "rgba(255, 255, 255, 0.9)",
                 "text-halo-width": 2
             }

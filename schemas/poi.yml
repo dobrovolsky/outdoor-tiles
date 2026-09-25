@@ -79,6 +79,7 @@ definitions:
             - key: 'image:0'
               tag_value: 'image:0'
 
+# Keep scripts/filter_tags.py in sync when changing include_when filters.
 layers:
     - id: food-store
       features:

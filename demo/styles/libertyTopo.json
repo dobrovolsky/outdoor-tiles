@@ -2,9 +2,14 @@
     "version": 8,
     "metadata": { "maputnik:renderer": "mlgljs" },
     "sources": {
+        "low-zoom-outdoor": {
+            "type": "vector",
+            "url": "/tiles/low-zoom-outdoor",
+            "attribution": "&copy; <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">OpenStreetMap contributors</a>"
+        },
         "openmaptiles": {
             "type": "vector",
-            "url": "/tiles/openmaptiles"
+            "url": "https://tiles.openfreemap.org/planet"
         },
         "mapterhorn": {
             "type": "raster-dem",
@@ -350,6 +355,24 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-tunnel_service_track_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "tunnel"],
+                ["match", ["get", "class"], ["service", "track"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#cfcdca",
+                "line-dasharray": [0.5, 0.25],
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 15, 1, 16, 4, 20, 11]
+            }
+        },
+        {
             "id": "tunnel_service_track_casing",
             "type": "line",
             "source": "openmaptiles",
@@ -417,6 +440,23 @@
                     20,
                     15
                 ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-tunnel_secondary_tertiary_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "tunnel"],
+                ["match", ["get", "class"], ["secondary", "tertiary"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#e9ac77",
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 8, 1.5, 20, 17]
             }
         },
         {
@@ -494,6 +534,25 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-tunnel_path_pedestrian",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+                ["==", ["get", "brunnel"], "tunnel"],
+                ["match", ["get", "class"], ["path", "pedestrian"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "rgba(126, 126, 126, 1)",
+                "line-dasharray": [2.5, 1],
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 13, 0.8, 15, 2]
+            }
+        },
+        {
             "id": "tunnel_path_pedestrian",
             "type": "line",
             "source": "openmaptiles",
@@ -537,6 +596,33 @@
                     2.5,
                     20,
                     11.5
+                ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-tunnel_service_track",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "tunnel"],
+                ["match", ["get", "class"], ["service", "track"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#fff",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    15.5,
+                    0,
+                    16,
+                    2,
+                    20,
+                    7.5
                 ]
             }
         },
@@ -591,6 +677,33 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-tunnel_minor",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "tunnel"],
+                ["match", ["get", "class"], ["minor"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#fff",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    13.5,
+                    0,
+                    14,
+                    2.5,
+                    20,
+                    11.5
+                ]
+            }
+        },
+        {
             "id": "tunnel_minor",
             "type": "line",
             "source": "openmaptiles",
@@ -613,6 +726,33 @@
                     2.5,
                     20,
                     11.5
+                ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-tunnel_secondary_tertiary",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "tunnel"],
+                ["match", ["get", "class"], ["secondary", "tertiary"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#fff4c6",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    6.5,
+                    0,
+                    7,
+                    0.5,
+                    20,
+                    10
                 ]
             }
         },
@@ -796,6 +936,42 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-road_service_track_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "minzoom": 10,
+            "filter": [
+                "all",
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["service", "track"], true, false]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": [
+                    "match",
+                    ["get", "class"],
+                    ["service"],
+                    "#cfcdca",
+                    "hsl(40,70%,60%,70%)"
+                ],
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    10,
+                    0.4,
+                    12,
+                    1.5,
+                    14,
+                    3.5,
+                    20,
+                    7
+                ]
+            }
+        },
+        {
             "id": "road_service_track_casing",
             "type": "line",
             "source": "openmaptiles",
@@ -867,6 +1043,38 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-road_minor_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["minor"], true, false],
+                ["!=", ["get", "ramp"], 1]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": "#cfcdca",
+                "line-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0, 12.5, 1],
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    12,
+                    0.5,
+                    13,
+                    1,
+                    14,
+                    4,
+                    20,
+                    20
+                ]
+            }
+        },
+        {
             "id": "road_minor_casing",
             "type": "line",
             "source": "openmaptiles",
@@ -895,6 +1103,24 @@
                     20,
                     20
                 ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-road_secondary_tertiary_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["secondary", "tertiary"], true, false],
+                ["!=", ["get", "ramp"], 1]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": "#e9ac77",
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 8, 1.5, 20, 17]
             }
         },
         {
@@ -973,6 +1199,36 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-road_path_pedestrian_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "minzoom": 10,
+            "filter": [
+                "all",
+                ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["path", "pedestrian"], true, false],
+                ["match", ["get", "surface"], ["paved"], true, false]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": "rgba(132, 106, 53, 0.85)",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    10,
+                    1.2,
+                    12,
+                    1.5,
+                    15,
+                    3.2
+                ]
+            }
+        },
+        {
             "id": "road_path_pedestrian_casing",
             "type": "line",
             "source": "openmaptiles",
@@ -1002,6 +1258,26 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-road_path_pedestrian",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "minzoom": 10,
+            "filter": [
+                "all",
+                ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["path", "pedestrian"], true, false],
+                ["match", ["get", "surface"], ["paved"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "rgba(255, 255, 255, 1)",
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 10, 0.4, 15, 2]
+            }
+        },
+        {
             "id": "road_path_pedestrian",
             "type": "line",
             "source": "openmaptiles",
@@ -1021,11 +1297,44 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-road_path_pedestrian_trail",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "minzoom": 10,
+            "filter": [
+                "all",
+                ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["path", "pedestrian"], true, false],
+                ["match", ["get", "surface"], ["paved"], false, true]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "rgba(100, 75, 37, 1)",
+                "line-dasharray": [2.5, 1],
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    10,
+                    0.2,
+                    12,
+                    0.5,
+                    13,
+                    1,
+                    15,
+                    1.5
+                ]
+            }
+        },
+        {
             "id": "road_path_pedestrian_trail",
             "type": "line",
             "source": "openmaptiles",
             "source-layer": "transportation",
-            "minzoom": 10,
+            "minzoom": 14,
             "filter": [
                 "all",
                 ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
@@ -1079,6 +1388,36 @@
                     2.5,
                     20,
                     11.5
+                ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-road_service_track",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "minzoom": 10,
+            "filter": [
+                "all",
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["service", "track"], true, false]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": "#fff",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    10,
+                    0.2,
+                    12,
+                    1,
+                    14,
+                    2.5,
+                    20,
+                    5
                 ]
             }
         },
@@ -1148,6 +1487,36 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-road_minor",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["minor"], true, false]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": "#fff",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    10,
+                    0.1,
+                    12,
+                    1,
+                    14,
+                    2.5,
+                    20,
+                    18
+                ]
+            }
+        },
+        {
             "id": "road_minor",
             "type": "line",
             "source": "openmaptiles",
@@ -1173,6 +1542,33 @@
                     2.5,
                     20,
                     18
+                ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-road_secondary_tertiary",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["match", ["get", "brunnel"], ["bridge", "tunnel"], false, true],
+                ["match", ["get", "class"], ["secondary", "tertiary"], true, false]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": "#fea",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    6.5,
+                    0,
+                    8,
+                    0.5,
+                    20,
+                    13
                 ]
             }
         },
@@ -1378,6 +1774,23 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-bridge_service_track_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "bridge"],
+                ["match", ["get", "class"], ["service", "track"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#cfcdca",
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 15, 1, 16, 4, 20, 11]
+            }
+        },
+        {
             "id": "bridge_service_track_casing",
             "type": "line",
             "source": "openmaptiles",
@@ -1448,6 +1861,23 @@
                     20,
                     25
                 ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-bridge_secondary_tertiary_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "bridge"],
+                ["match", ["get", "class"], ["secondary", "tertiary"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#e9ac77",
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 8, 1.5, 20, 17]
             }
         },
         {
@@ -1524,6 +1954,26 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-bridge_path_pedestrian",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+                ["==", ["get", "brunnel"], "bridge"],
+                ["match", ["get", "class"], ["path", "pedestrian"], true, false],
+                ["match", ["get", "subclass"], ["path", "footway"], false, true]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "rgba(117, 117, 117, 1)",
+                "line-dasharray": [2.5, 1],
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 13, 0.8, 15, 2]
+            }
+        },
+        {
             "id": "bridge_path_pedestrian",
             "type": "line",
             "source": "openmaptiles",
@@ -1534,6 +1984,26 @@
                 ["==", ["get", "brunnel"], "bridge"],
                 ["match", ["get", "class"], ["path", "pedestrian"], true, false],
                 ["match", ["get", "subclass"], ["path", "footway"], false, true]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "rgba(117, 117, 117, 1)",
+                "line-dasharray": [2.5, 1],
+                "line-width": ["interpolate", ["exponential", 1.2], ["zoom"], 13, 0.8, 15, 2]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-bridge_path_pedestrian_trail",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false],
+                ["==", ["get", "brunnel"], "bridge"],
+                ["match", ["get", "class"], ["path", "pedestrian"], true, false],
+                ["match", ["get", "subclass"], ["path", "footway"], true, false]
             ],
             "layout": { "line-join": "round" },
             "paint": {
@@ -1587,6 +2057,33 @@
                     2.5,
                     20,
                     11.5
+                ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-bridge_service_track",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "bridge"],
+                ["match", ["get", "class"], ["service", "track"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#fff",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    15.5,
+                    0,
+                    16,
+                    2,
+                    20,
+                    7.5
                 ]
             }
         },
@@ -1645,6 +2142,33 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-bridge_street",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "bridge"],
+                ["match", ["get", "class"], ["minor"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#fff",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    13.5,
+                    0,
+                    14,
+                    2.5,
+                    20,
+                    18
+                ]
+            }
+        },
+        {
             "id": "bridge_street",
             "type": "line",
             "source": "openmaptiles",
@@ -1667,6 +2191,33 @@
                     2.5,
                     20,
                     18
+                ]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-bridge_secondary_tertiary",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "filter": [
+                "all",
+                ["==", ["get", "brunnel"], "bridge"],
+                ["match", ["get", "class"], ["secondary", "tertiary"], true, false]
+            ],
+            "layout": { "line-join": "round" },
+            "paint": {
+                "line-color": "#fea",
+                "line-width": [
+                    "interpolate",
+                    ["exponential", 1.2],
+                    ["zoom"],
+                    6.5,
+                    0,
+                    7,
+                    0.5,
+                    20,
+                    10
                 ]
             }
         },
@@ -1968,6 +2519,33 @@
             }
         },
         {
+            "id": "low-zoom-outdoor-road_path_cycle_casing",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "minzoom": 10,
+            "filter": [
+                "all",
+                ["in", "class", "path", "track"],
+                [
+                    "all",
+                    [
+                        "any",
+                        ["==", "subclass", "cycleway"],
+                        ["==", "bicycle", 1],
+                        ["==", "bicycle", "designated"]
+                    ]
+                ]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": "rgba(82, 84, 248, 1)",
+                "line-opacity": 0.8,
+                "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 13, 1.5]
+            }
+        },
+        {
             "id": "road_path_cycle_casing",
             "type": "line",
             "source": "openmaptiles",
@@ -1991,6 +2569,26 @@
                 "line-color": "rgba(82, 84, 248, 1)",
                 "line-opacity": 0.8,
                 "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 13, 1.5]
+            }
+        },
+        {
+            "id": "low-zoom-outdoor-road_path_restricted",
+            "type": "line",
+            "source": "low-zoom-outdoor",
+            "source-layer": "transportation",
+            "maxzoom": 14,
+            "minzoom": 10,
+            "filter": [
+                "all",
+                ["match", ["get", "class"], ["path", "track"], true, false],
+                ["match", ["get", "access"], ["no", "private", "military"], true, false]
+            ],
+            "layout": { "line-cap": "round", "line-join": "round" },
+            "paint": {
+                "line-color": "#f85552",
+                "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 13, 1.5],
+                "line-opacity": 0.6,
+                "line-layer-opacity": 1
             }
         },
         {

@@ -1,7 +1,7 @@
 planetiler-openmaptiles.jar
 planetiler-openmaptiles-paths.jar
 planetiler.jar
-routes-profile.jar
+trails-profile.jar
 .planetiler.version
 .planetiler-openmaptiles.version
 tile_weights.tsv.gz

@@ -103,7 +103,7 @@ body {
     font-weight: 500;
 }
 
-.route-popup__route + .route-popup__route {
+.trail-popup__trail + .trail-popup__trail {
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid #ddd;
